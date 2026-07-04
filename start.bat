@@ -13,37 +13,48 @@ cd /d "%~dp0"
 REM --- 找到 Python ---
 set "PYTHON=python"
 where %PYTHON% >nul 2>nul
-if errorlevel 1 (
-    set "PYTHON=py"
-    where py >nul 2>nul
-    if errorlevel 1 (
-        echo [錯誤] 找不到 Python，請先安裝 Python 3.10 以上版本並加入 PATH。
-        echo        下載： https://www.python.org/downloads/
-        pause
-        exit /b 1
-    )
-)
+if errorlevel 1 goto try_py
+goto have_python
 
+:try_py
+set "PYTHON=py"
+where py >nul 2>nul
+if errorlevel 1 goto no_python
+goto have_python
+
+:no_python
+echo [錯誤] 找不到 Python，請先安裝 Python 3.10 以上版本並加入 PATH。
+echo         下載： https://www.python.org/downloads/
+pause
+exit /b 1
+
+:have_python
 REM --- 確認 pywebview 是否已安裝，缺少則安裝相依套件 ---
 %PYTHON% -c "import webview" >nul 2>nul
-if errorlevel 1 (
-    echo [資訊] 首次啟動，安裝相依套件中...
-    %PYTHON% -m pip install -r requirements.txt
-    if errorlevel 1 (
-        echo [錯誤] 相依套件安裝失敗，請檢查網路或 pip 設定。
-        pause
-        exit /b 1
-    )
-)
+if errorlevel 1 goto install_deps
+goto run_app
 
+:install_deps
+echo [資訊] 首次啟動，安裝相依套件中...
+%PYTHON% -m pip install -r requirements.txt
+if errorlevel 1 goto install_failed
+goto run_app
+
+:install_failed
+echo [錯誤] 相依套件安裝失敗，請檢查網路或 pip 設定。
+pause
+exit /b 1
+
+:run_app
 REM --- 啟動應用程式 (可加 --debug 開啟開發者工具) ---
 echo [資訊] 啟動 OpenDirector...
 %PYTHON% app.py %*
-if errorlevel 1 (
-    echo.
-    echo [錯誤] 應用程式異常結束。
-    pause
-    exit /b 1
-)
-
+if errorlevel 1 goto app_failed
 endlocal
+exit /b 0
+
+:app_failed
+echo.
+echo [錯誤] 應用程式異常結束。
+pause
+exit /b 1
