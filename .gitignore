@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.opendirector/
+*.partial.mp4
+*.odproj
+*.zip

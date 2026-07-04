@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #08080a; }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, "PingFang TC", "Microsoft JhengHei", sans-serif; }
+  ::-webkit-scrollbar { height: 10px; width: 10px; }
+  ::-webkit-scrollbar-track { background: #0c0c0e; }
+  ::-webkit-scrollbar-thumb { background: #2c2c33; border-radius: 6px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a3a43; }
+</style>
+</helmet>
+
+<div style="min-height:100vh; background:#08080a; color:#e7e7ea; padding:26px 22px 60px; overflow-x:hidden;">
+
+  <div style="max-width:1320px; margin:0 auto;">
+    <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:6px;">
+      <div style="font-size:13px; font-weight:700; letter-spacing:0.04em; color:#e7e7ea;">影片剪輯介面</div>
+      <div style="font-size:12px; color:#7c7c86;">兩種佈局 · 共用同一套可操作引擎（切分／修剪／拖曳拼接／合併／縮放）</div>
+    </div>
+    <div style="font-size:11.5px; color:#62626c; margin-bottom:22px; line-height:1.6;">提示：選取模式下拖曳片段可移到不同時間段、拖片段左右邊緣可修剪長度；切換到切分模式點擊片段即可分割；選取片段後按「合併」可與後一段拼接。鍵盤：空白鍵播放、S 在播放頭切分、Delete 刪除、Esc 取消選取。</div>
+
+    <!-- ============ 1a ============ -->
+    <div id="1a" data-screen-label="佈局1a 經典置中" style="position:relative; margin-bottom:34px;">
+      <div style="position:absolute; top:-10px; left:14px; z-index:20; background:{{ accent }}; color:#fff; font-size:11px; font-weight:700; padding:3px 10px; border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,0.45);">1a · 經典置中</div>
+
+      <div style="background:#0e0e11; border:1px solid #1f1f25; border-radius:14px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+        <!-- preview zone -->
+        <div style="display:flex; justify-content:center; padding:26px 22px 20px; background:radial-gradient(120% 100% at 50% 0%, #131317 0%, #0a0a0c 70%);">
+          <div style="width:100%; max-width:640px;">
+            <div style="position:relative; aspect-ratio:16/9; background:#000; border-radius:10px; overflow:hidden; border:1px solid #222;">
+              <div style="{{ pvFill }}"></div>
+              <div style="position:absolute; inset:0; background:radial-gradient(120% 120% at 50% 38%, transparent 55%, rgba(0,0,0,0.55) 100%);"></div>
+              <div style="position:absolute; top:10px; left:12px; display:flex; align-items:center; gap:7px;">
+                <sc-if value="{{ pvActive }}" hint-placeholder-val="{{ false }}"><div style="width:8px; height:8px; border-radius:50%; background:{{ accent }}; box-shadow:0 0 8px {{ accent }};"></div></sc-if>
+                <span style="font-size:11px; color:#b9b9c2; font-weight:600;">{{ pvTrack }}</span>
+              </div>
+              <div style="position:absolute; top:10px; right:12px; font-family:ui-monospace,'SF Mono',Menlo,monospace; font-size:11px; color:#cfcfd6; background:rgba(0,0,0,0.5); padding:3px 8px; border-radius:5px; letter-spacing:0.04em;">{{ currentTC }} / {{ totalTC }}</div>
+              <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;">
+                <div style="font-size:20px; font-weight:700; color:#f0f0f4; text-shadow:0 2px 12px rgba(0,0,0,0.7);">{{ pvLabel }}</div>
+                <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace; font-size:11px; color:#9a9aa4;">{{ pvSub }}</div>
+              </div>
+            </div>
+
+            <!-- transport -->
+            <div style="display:flex; align-items:center; justify-content:center; gap:18px; margin-top:16px;">
+              <button onClick="{{ toStart }}" style="{{ ghostBtn }}" style-hover="background:#1c1c21;"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14l-10-7z" fill="currentColor"/></svg></button>
+              <button onClick="{{ togglePlay }}" style="{{ playBtn }}" style-hover="filter:brightness(1.08);">
+                <sc-if value="{{ isPlaying }}" hint-placeholder-val="{{ false }}"><svg width="17" height="17" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor"/></svg></sc-if>
+                <sc-if value="{{ notPlaying }}" hint-placeholder-val="{{ true }}"><svg width="17" height="17" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></svg></sc-if>
+              </button>
+              <button onClick="{{ toEnd }}" style="{{ ghostBtn }}" style-hover="background:#1c1c21;"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5l10 7-10 7z" fill="currentColor"/></svg></button>
+              <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace; font-size:13px; color:#d6d6dd; margin-left:6px; letter-spacing:0.04em;">{{ currentTC }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- timeline -->
+        <div style="border-top:1px solid #1c1c22; background:#0b0b0d;">
+          <!-- toolbar -->
+          <div style="display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid #16161b; flex-wrap:wrap;">
+            <div style="display:flex; gap:6px;">
+              <button onClick="{{ setSelect }}" style="{{ toolSelStyle }}">選取</button>
+              <button onClick="{{ setSplit }}" style="{{ toolSplitStyle }}">切分</button>
+            </div>
+            <div style="width:1px; height:22px; background:#26262c; margin:0 2px;"></div>
+            <button onClick="{{ splitPlayhead }}" style="{{ actBtn }}" style-hover="background:#1f1f25;">在播放頭切分</button>
+            <button onClick="{{ doMerge }}" style="{{ mergeStyle }}" style-hover="background:#1f1f25;">合併下一段</button>
+            <button onClick="{{ doDup }}" style="{{ actBtn }}" style-hover="background:#1f1f25;">複製</button>
+            <button onClick="{{ doDelete }}" style="{{ delStyle }}" style-hover="background:color-mix(in srgb,#ef4444 18%,#17171b);">刪除</button>
+            <div style="flex:1;"></div>
+            <button onClick="{{ doReset }}" style="{{ ghost2 }}" style-hover="background:#1c1c21;">重設</button>
+            <div style="display:flex; align-items:center; gap:8px; margin-left:4px;">
+              <button onClick="{{ zoomOut }}" style="{{ zoomBtn }}" style-hover="background:#1f1f25;">−</button>
+              <div style="font-family:ui-monospace,monospace; font-size:11px; color:#9a9aa4; width:42px; text-align:center;">{{ zoomPct }}</div>
+              <button onClick="{{ zoomIn }}" style="{{ zoomBtn }}" style-hover="background:#1f1f25;">+</button>
+            </div>
+          </div>
+
+          <!-- lanes -->
+          <div style="display:flex; max-height:330px;">
+            <div style="width:138px; flex:none; background:#0d0d10; border-right:1px solid #1c1c22;">
+              <div style="height:30px; display:flex; align-items:center; padding:0 12px; font-family:ui-monospace,monospace; font-size:10px; color:#5a5a64; letter-spacing:0.05em;">時間軸</div>
+              <sc-for list="{{ vTracks }}" as="tr" hint-placeholder-count="4">
+                <div style="{{ tr.headerStyle }}">
+                  <span style="font-size:12px; color:#c4c4cd; font-weight:600;">{{ tr.name }}</span>
+                  <span style="{{ tr.chipStyle }}">{{ tr.chip }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="flex:1; overflow-x:auto; overflow-y:hidden;">
+              <div data-tlcontent="" style="{{ tlContentStyle }}">
+                <div onPointerDown="{{ seekDrag }}" style="{{ rulerStyle }}">
+                  <sc-for list="{{ ticks }}" as="tk" hint-placeholder-count="8">
+                    <div style="{{ tk.style }}">{{ tk.label }}</div>
+                  </sc-for>
+                </div>
+                <sc-for list="{{ vTracks }}" as="tr" hint-placeholder-count="4">
+                  <div data-track-id="{{ tr.id }}" style="{{ tr.laneStyle }}">
+                    <sc-for list="{{ tr.clips }}" as="c" hint-placeholder-count="3">
+                      <div onPointerDown="{{ c.onDown }}" onClick="{{ c.onClick }}" style="{{ c.style }}" style-hover="filter:brightness(1.08);">
+                        <div style="{{ c.topbar }}"></div>
+                        <sc-if value="{{ c.isAudio }}" hint-placeholder-val="{{ false }}"><div style="{{ c.wave }}"></div></sc-if>
+                        <div style="{{ c.labelStyle }}">{{ c.label }}</div>
+                        <div onPointerDown="{{ c.onTrimL }}" style="{{ c.hL }}" style-hover="background:{{ accent }};"></div>
+                        <div onPointerDown="{{ c.onTrimR }}" style="{{ c.hR }}" style-hover="background:{{ accent }};"></div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+                <div style="{{ playheadStyle }}">
+                  <div onPointerDown="{{ seekDrag }}" style="{{ playheadKnob }}"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 1b ============ -->
+    <div id="1b" data-screen-label="佈局1b 工作室全幅" style="position:relative;">
+      <div style="position:absolute; top:-10px; left:14px; z-index:20; background:{{ accent }}; color:#fff; font-size:11px; font-weight:700; padding:3px 10px; border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,0.45);">1b · 工作室全幅</div>
+
+      <div style="background:#0c0c0e; border:1px solid #1f1f25; border-radius:14px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+        <!-- top app bar -->
+        <div style="display:flex; align-items:center; gap:14px; padding:10px 16px; background:#121216; border-bottom:1px solid #1c1c22;">
+          <span style="font-size:12px; font-weight:700; color:#d6d6dd; letter-spacing:0.03em;">PROJECT · 剪輯室</span>
+          <div style="flex:1;"></div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <button onClick="{{ toStart }}" style="{{ ghostBtn }}" style-hover="background:#1c1c21;"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14l-10-7z" fill="currentColor"/></svg></button>
+            <button onClick="{{ togglePlay }}" style="{{ playBtnSm }}" style-hover="filter:brightness(1.08);">
+              <sc-if value="{{ isPlaying }}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor"/></svg></sc-if>
+              <sc-if value="{{ notPlaying }}" hint-placeholder-val="{{ true }}"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></svg></sc-if>
+            </button>
+            <button onClick="{{ toEnd }}" style="{{ ghostBtn }}" style-hover="background:#1c1c21;"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5l10 7-10 7z" fill="currentColor"/></svg></button>
+            <div style="font-family:ui-monospace,monospace; font-size:12px; color:#d6d6dd; letter-spacing:0.04em;">{{ currentTC }} / {{ totalTC }}</div>
+          </div>
+          <div style="width:1px; height:20px; background:#26262c;"></div>
+          <div style="display:flex; align-items:center; gap:7px;">
+            <button onClick="{{ zoomOut }}" style="{{ zoomBtn }}" style-hover="background:#1f1f25;">−</button>
+            <div style="font-family:ui-monospace,monospace; font-size:11px; color:#9a9aa4; width:42px; text-align:center;">{{ zoomPct }}</div>
+            <button onClick="{{ zoomIn }}" style="{{ zoomBtn }}" style-hover="background:#1f1f25;">+</button>
+          </div>
+        </div>
+
+        <!-- preview + info strip -->
+        <div style="display:flex; gap:0; background:#0a0a0c;">
+          <div style="flex:1; min-width:0; padding:20px; display:flex; justify-content:center;">
+            <div style="width:100%; max-width:560px;">
+              <div style="position:relative; aspect-ratio:16/9; background:#000; border-radius:8px; overflow:hidden; border:1px solid #222;">
+                <div style="{{ pvFill }}"></div>
+                <div style="position:absolute; inset:0; background:radial-gradient(120% 120% at 50% 38%, transparent 55%, rgba(0,0,0,0.55) 100%);"></div>
+                <div style="position:absolute; top:10px; right:12px; font-family:ui-monospace,monospace; font-size:11px; color:#cfcfd6; background:rgba(0,0,0,0.5); padding:3px 8px; border-radius:5px;">{{ currentTC }}</div>
+                <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px;">
+                  <div style="font-size:18px; font-weight:700; color:#f0f0f4; text-shadow:0 2px 12px rgba(0,0,0,0.7);">{{ pvLabel }}</div>
+                  <div style="font-family:ui-monospace,monospace; font-size:10px; color:#9a9aa4;">{{ pvSub }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="width:236px; flex:none; border-left:1px solid #1c1c22; background:#0d0d10; padding:18px 16px; display:flex; flex-direction:column; gap:14px;">
+            <div style="font-size:10px; font-weight:700; letter-spacing:0.08em; color:#5a5a64;">選取的片段</div>
+            <div style="font-size:15px; font-weight:700; color:#e7e7ea;">{{ selName }}</div>
+            <div style="display:flex; flex-direction:column; gap:9px; font-family:ui-monospace,monospace; font-size:11px;">
+              <div style="display:flex; justify-content:space-between;"><span style="color:#74747e;">軌道</span><span style="color:#c4c4cd;">{{ selTrack }}</span></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:#74747e;">起點 In</span><span style="color:#c4c4cd;">{{ selIn }}</span></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:#74747e;">終點 Out</span><span style="color:#c4c4cd;">{{ selOut }}</span></div>
+              <div style="display:flex; justify-content:space-between;"><span style="color:#74747e;">長度</span><span style="color:{{ accent }};">{{ selDur }}</span></div>
+            </div>
+            <div style="height:1px; background:#1c1c22; margin:2px 0;"></div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <button onClick="{{ splitPlayhead }}" style="{{ actBtnFull }}" style-hover="background:#1f1f25;">在播放頭切分</button>
+              <button onClick="{{ doMerge }}" style="{{ mergeStyleFull }}" style-hover="background:#1f1f25;">合併下一段</button>
+              <button onClick="{{ doDup }}" style="{{ actBtnFull }}" style-hover="background:#1f1f25;">複製片段</button>
+              <button onClick="{{ doDelete }}" style="{{ delStyleFull }}" style-hover="background:color-mix(in srgb,#ef4444 18%,#17171b);">刪除片段</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- timeline toolbar (slim) -->
+        <div style="display:flex; align-items:center; gap:10px; padding:9px 16px; border-top:1px solid #1c1c22; border-bottom:1px solid #16161b; background:#0e0e11;">
+          <div style="display:flex; gap:6px;">
+            <button onClick="{{ setSelect }}" style="{{ toolSelStyle }}">選取</button>
+            <button onClick="{{ setSplit }}" style="{{ toolSplitStyle }}">切分</button>
+          </div>
+          <div style="flex:1;"></div>
+          <span style="font-size:11px; color:#5a5a64;">拖曳片段移動 · 拖邊緣修剪 · 切分模式點擊分割</span>
+          <button onClick="{{ doReset }}" style="{{ ghost2 }}" style-hover="background:#1c1c21;">重設</button>
+        </div>
+
+        <!-- lanes (full bleed) -->
+        <div style="display:flex; max-height:300px;">
+          <div style="width:138px; flex:none; background:#0b0b0d; border-right:1px solid #1c1c22;">
+            <div style="height:30px; display:flex; align-items:center; padding:0 12px; font-family:ui-monospace,monospace; font-size:10px; color:#5a5a64; letter-spacing:0.05em;">時間軸</div>
+            <sc-for list="{{ vTracks }}" as="tr" hint-placeholder-count="4">
+              <div style="{{ tr.headerStyle }}">
+                <span style="font-size:12px; color:#c4c4cd; font-weight:600;">{{ tr.name }}</span>
+                <span style="{{ tr.chipStyle }}">{{ tr.chip }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="flex:1; overflow-x:auto; overflow-y:hidden;">
+            <div data-tlcontent="" style="{{ tlContentStyle }}">
+              <div onPointerDown="{{ seekDrag }}" style="{{ rulerStyle }}">
+                <sc-for list="{{ ticks }}" as="tk" hint-placeholder-count="8">
+                  <div style="{{ tk.style }}">{{ tk.label }}</div>
+                </sc-for>
+              </div>
+              <sc-for list="{{ vTracks }}" as="tr" hint-placeholder-count="4">
+                <div data-track-id="{{ tr.id }}" style="{{ tr.laneStyle }}">
+                  <sc-for list="{{ tr.clips }}" as="c" hint-placeholder-count="3">
+                    <div onPointerDown="{{ c.onDown }}" onClick="{{ c.onClick }}" style="{{ c.style }}" style-hover="filter:brightness(1.08);">
+                      <div style="{{ c.topbar }}"></div>
+                      <sc-if value="{{ c.isAudio }}" hint-placeholder-val="{{ false }}"><div style="{{ c.wave }}"></div></sc-if>
+                      <div style="{{ c.labelStyle }}">{{ c.label }}</div>
+                      <div onPointerDown="{{ c.onTrimL }}" style="{{ c.hL }}" style-hover="background:{{ accent }};"></div>
+                      <div onPointerDown="{{ c.onTrimR }}" style="{{ c.hR }}" style-hover="background:{{ accent }};"></div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+              <div style="{{ playheadStyle }}">
+                <div onPointerDown="{{ seekDrag }}" style="{{ playheadKnob }}"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1320,&quot;height&quot;:920},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#3b82f6&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;#3b82f6&quot;,&quot;#10b981&quot;,&quot;#f97316&quot;,&quot;#a855f7&quot;],&quot;section&quot;:&quot;外觀&quot;},&quot;snapping&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;行為&quot;}}">
+class Component extends DCLogic {
+  state = this.initState();
+
+  initState() {
+    const saved = this.load();
+    return saved || this.defaults();
+  }
+
+  defaults() {
+    return {
+      total: 48,
+      pxPerSec: 16,
+      playhead: 0,
+      selectedId: null,
+      tool: 'select',
+      isPlaying: false,
+      tracks: [
+        { id: 'v1', type: 'video', name: '影片軌 1', clips: [
+          { id: 'a1', start: 0,  duration: 10, label: '開場',   hue: 250 },
+          { id: 'a2', start: 10, duration: 12, label: '訪談',   hue: 232 },
+          { id: 'a3', start: 22, duration: 12, label: 'B-roll', hue: 266 },
+          { id: 'a4', start: 34, duration: 12, label: '結尾',   hue: 250 },
+        ]},
+        { id: 'v2', type: 'video', name: '影片軌 2', clips: [
+          { id: 'b1', start: 6,  duration: 8, label: '標題卡',   hue: 210 },
+          { id: 'b2', start: 26, duration: 7, label: '插入鏡頭', hue: 218 },
+        ]},
+        { id: 'm1', type: 'audio', name: '音訊軌', clips: [
+          { id: 'c1', start: 0,  duration: 30, label: '配樂' },
+          { id: 'c2', start: 32, duration: 14, label: '尾聲音樂' },
+        ]},
+        { id: 's1', type: 'subtitle', name: '字幕軌', clips: [
+          { id: 'd1', start: 2,  duration: 4, label: '歡迎' },
+          { id: 'd2', start: 11, duration: 7, label: '重點一' },
+          { id: 'd3', start: 24, duration: 6, label: '重點二' },
+          { id: 'd4', start: 36, duration: 6, label: '結語' },
+        ]},
+      ],
+    };
+  }
+
+  componentDidMount() {
+    this._onKey = (e) => {
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+      if (e.code === 'Space') { e.preventDefault(); this.togglePlay(); }
+      else if (e.key === 'Delete' || e.key === 'Backspace') { if (this.state.selectedId) { e.preventDefault(); this.doDelete(); } }
+      else if (e.key === 's' || e.key === 'S') { this.splitPlayhead(); }
+      else if (e.key === 'Escape') { this.setState({ selectedId: null }); }
+    };
+    document.addEventListener('keydown', this._onKey);
+  }
+  componentWillUnmount() {
+    document.removeEventListener('keydown', this._onKey);
+    if (this._raf) cancelAnimationFrame(this._raf);
+  }
+
+  // ---- persistence ----
+  persist() {
+    try {
+      localStorage.setItem('veditor.v3', JSON.stringify({
+        tracks: this.state.tracks, playhead: this.state.playhead,
+        pxPerSec: this.state.pxPerSec, total: this.state.total,
+      }));
+    } catch (e) {}
+  }
+  load() {
+    try {
+      const r = localStorage.getItem('veditor.v3');
+      if (!r) return null;
+      const o = JSON.parse(r);
+      if (o && o.tracks && o.tracks.length) {
+        return { tracks: o.tracks, playhead: o.playhead || 0, pxPerSec: o.pxPerSec || 16,
+          total: o.total || 48, selectedId: null, tool: 'select', isPlaying: false };
+      }
+    } catch (e) {}
+    return null;
+  }
+  commit(updater) { this.setState(updater, () => this.persist()); }
+
+  // ---- helpers ----
+  nid() { this._n = (this._n || 0) + 1; return 'k' + Date.now().toString(36) + this._n; }
+  findClip(id) {
+    if (!id) return null;
+    for (const tr of this.state.tracks) { const c = tr.clips.find(c => c.id === id); if (c) return { tr, clip: c }; }
+    return null;
+  }
+  tc(x) {
+    x = Math.max(0, x);
+    const m = Math.floor(x / 60), s = Math.floor(x % 60), f = Math.floor((x - Math.floor(x)) * 30);
+    const p = n => String(n).padStart(2, '0');
+    return p(m) + ':' + p(s) + ':' + p(f);
+  }
+  rl(x) { const m = Math.floor(x / 60), s = Math.floor(x % 60); return m + ':' + String(s).padStart(2, '0'); }
+  activeClip() {
+    const p = this.state.playhead;
+    for (const tid of ['v2', 'v1']) {
+      const tr = this.state.tracks.find(t => t.id === tid);
+      if (!tr) continue;
+      const c = tr.clips.find(c => p >= c.start && p < c.start + c.duration);
+      if (c) return { clip: c, track: tr };
+    }
+    return null;
+  }
+
+  // ---- mutations ----
+  selectClip(id) { this.setState({ selectedId: id }); }
+  updateClip(id, patch) {
+    this.commit(s => ({ tracks: s.tracks.map(t => ({ ...t, clips: t.clips.map(c => c.id === id ? { ...c, ...patch } : c) })) }));
+  }
+  setTool(tool) { this.setState({ tool }); }
+  zoom(d) { this.setState(s => ({ pxPerSec: Math.max(8, Math.min(48, Math.round((s.pxPerSec + d) * 10) / 10)) }), () => this.persist()); }
+
+  snap(ns, id, dur) {
+    if (this.props.snapping === false) return Math.max(0, Math.round(ns / 0.1) * 0.1);
+    const t = 7 / this.state.pxPerSec;
+    const found = this.findClip(id);
+    const edges = [0, this.state.playhead];
+    for (const c of found.tr.clips) { if (c.id === id) continue; edges.push(c.start, c.start + c.duration); }
+    let best = null, bd = t;
+    for (const e of edges) { if (Math.abs(ns - e) < bd) { bd = Math.abs(ns - e); best = e; } }
+    if (best !== null) return Math.max(0, best);
+    best = null; bd = t;
+    for (const e of edges) { if (Math.abs((ns + dur) - e) < bd) { bd = Math.abs((ns + dur) - e); best = e - dur; } }
+    if (best !== null) return Math.max(0, best);
+    return Math.max(0, Math.round(ns / 0.1) * 0.1);
+  }
+
+  startMove(e, id) {
+    e.stopPropagation();
+    if (this.state.tool === 'split') return;
+    e.preventDefault();
+    const found = this.findClip(id); if (!found) return;
+    this.selectClip(id);
+    const pps = this.state.pxPerSec, x0 = e.clientX, s0 = found.clip.start, dur = found.clip.duration;
+    const mv = (ev) => { let ns = Math.max(0, s0 + (ev.clientX - x0) / pps); ns = this.snap(ns, id, dur); ns = Math.min(ns, this.state.total - dur); this.updateClip(id, { start: Math.max(0, ns) }); };
+    const up = () => { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); this.persist(); };
+    document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up);
+  }
+
+  startTrim(e, id, side) {
+    e.stopPropagation();
+    if (this.state.tool === 'split') return;
+    e.preventDefault();
+    const found = this.findClip(id); if (!found) return;
+    this.selectClip(id);
+    const pps = this.state.pxPerSec, x0 = e.clientX, s0 = found.clip.start, d0 = found.clip.duration;
+    const mv = (ev) => {
+      const dx = (ev.clientX - x0) / pps;
+      if (side === 'l') {
+        let ns = Math.max(0, Math.min(s0 + d0 - 0.3, s0 + dx));
+        let nd = s0 + d0 - ns;
+        ns = this.snap(ns, id, nd); nd = s0 + d0 - ns;
+        this.updateClip(id, { start: Math.max(0, ns), duration: Math.max(0.3, nd) });
+      } else {
+        let nd = Math.max(0.3, d0 + dx);
+        const end = s0 + nd, t = 7 / pps; let se = end;
+        for (const c of found.tr.clips) { if (c.id === id) continue; for (const ee of [c.start, c.start + c.duration]) { if (Math.abs(end - ee) < t) se = ee; } }
+        if (Math.abs(end - this.state.playhead) < t) se = this.state.playhead;
+        nd = Math.max(0.3, Math.min(this.state.total - s0, se - s0));
+        this.updateClip(id, { duration: nd });
+      }
+    };
+    const up = () => { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); this.persist(); };
+    document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up);
+  }
+
+  onClipClick(e, id) {
+    if (this.state.tool === 'split') {
+      const r = e.currentTarget.getBoundingClientRect();
+      const found = this.findClip(id); if (!found) return;
+      const time = found.clip.start + (e.clientX - r.left) / this.state.pxPerSec;
+      this.splitAt(id, time);
+    } else {
+      this.selectClip(id);
+    }
+  }
+
+  splitAt(id, time) {
+    const found = this.findClip(id); if (!found) return;
+    const c = found.clip;
+    if (time <= c.start + 0.3 || time >= c.start + c.duration - 0.3) return;
+    const a = { ...c, duration: time - c.start };
+    const b = { ...c, id: this.nid(), start: time, duration: (c.start + c.duration) - time };
+    this.commit(s => ({ selectedId: b.id, tracks: s.tracks.map(t => t.id !== found.tr.id ? t : { ...t, clips: [...t.clips.filter(x => x.id !== id), a, b] }) }));
+  }
+
+  splitPlayhead() {
+    const p = this.state.playhead;
+    let target = null;
+    const sel = this.findClip(this.state.selectedId);
+    if (sel && p > sel.clip.start + 0.3 && p < sel.clip.start + sel.clip.duration - 0.3) target = sel.clip.id;
+    else { const a = this.activeClip(); if (a) target = a.clip.id; }
+    if (!target) { for (const tr of this.state.tracks) { const c = tr.clips.find(c => p > c.start + 0.3 && p < c.start + c.duration - 0.3); if (c) { target = c.id; break; } } }
+    if (target) this.splitAt(target, p);
+  }
+
+  doMerge() {
+    const sel = this.findClip(this.state.selectedId); if (!sel) return;
+    const clips = sel.tr.clips.slice().sort((a, b) => a.start - b.start);
+    const i = clips.findIndex(c => c.id === sel.clip.id);
+    if (i < 0 || i >= clips.length - 1) return;
+    const a = clips[i], b = clips[i + 1];
+    const ns = Math.min(a.start, b.start), ne = Math.max(a.start + a.duration, b.start + b.duration);
+    const merged = { ...a, start: ns, duration: ne - ns };
+    this.commit(s => ({ selectedId: merged.id, tracks: s.tracks.map(t => t.id !== sel.tr.id ? t : { ...t, clips: [...t.clips.filter(x => x.id !== a.id && x.id !== b.id), merged] }) }));
+  }
+
+  doDup() {
+    const sel = this.findClip(this.state.selectedId); if (!sel) return;
+    const c = sel.clip;
+    const nc = { ...c, id: this.nid(), start: Math.min(this.state.total - c.duration, c.start + c.duration) };
+    this.commit(s => ({ selectedId: nc.id, tracks: s.tracks.map(t => t.id !== sel.tr.id ? t : { ...t, clips: [...t.clips, nc] }) }));
+  }
+
+  doDelete() {
+    const sel = this.findClip(this.state.selectedId); if (!sel) return;
+    this.commit(s => ({ selectedId: null, tracks: s.tracks.map(t => ({ ...t, clips: t.clips.filter(x => x.id !== sel.clip.id) })) }));
+  }
+
+  doReset() { this.commit(() => ({ ...this.defaults() })); }
+
+  seekDrag(e) {
+    e.preventDefault(); e.stopPropagation();
+    const content = (e.currentTarget.closest && e.currentTarget.closest('[data-tlcontent]')) || e.currentTarget;
+    const rect = content.getBoundingClientRect();
+    const pps = this.state.pxPerSec;
+    const set = (cx) => { let t = (cx - rect.left) / pps; t = Math.max(0, Math.min(this.state.total, t)); this.setState({ playhead: t }); };
+    set(e.clientX);
+    const mv = (ev) => set(ev.clientX);
+    const up = () => { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); this.persist(); };
+    document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up);
+  }
+
+  togglePlay() {
+    if (this.state.isPlaying) { this.setState({ isPlaying: false }); if (this._raf) cancelAnimationFrame(this._raf); this.persist(); return; }
+    if (this.state.playhead >= this.state.total) this.setState({ playhead: 0 });
+    this.setState({ isPlaying: true });
+    this._last = performance.now();
+    const tick = (now) => {
+      if (!this.state.isPlaying) return;
+      const dt = (now - this._last) / 1000; this._last = now;
+      let p = this.state.playhead + dt;
+      if (p >= this.state.total) { this.setState({ playhead: this.state.total, isPlaying: false }); this.persist(); return; }
+      this.setState({ playhead: p });
+      this._raf = requestAnimationFrame(tick);
+    };
+    this._raf = requestAnimationFrame(tick);
+  }
+  toStart() { this.setState({ playhead: 0 }); }
+  toEnd() { this.setState({ playhead: this.state.total }); }
+
+  // ---- view model ----
+  clipStyle(type, c, sel, pps, h, ACC) {
+    let bg;
+    if (type === 'video') bg = 'linear-gradient(180deg, oklch(0.5 0.12 ' + c.hue + '), oklch(0.4 0.1 ' + c.hue + '))';
+    else if (type === 'audio') bg = 'linear-gradient(180deg, oklch(0.42 0.07 178), oklch(0.34 0.06 178))';
+    else bg = 'linear-gradient(180deg, oklch(0.46 0.1 300), oklch(0.38 0.09 300))';
+    return {
+      position: 'absolute', left: (c.start * pps) + 'px', top: '5px', height: (h - 10) + 'px',
+      width: Math.max(10, c.duration * pps) + 'px', borderRadius: '6px', background: bg,
+      border: sel ? '1.5px solid ' + ACC : '1px solid rgba(0,0,0,0.4)',
+      boxShadow: sel ? '0 0 0 2px color-mix(in srgb,' + ACC + ' 35%,transparent), 0 8px 20px rgba(0,0,0,0.5)' : '0 1px 2px rgba(0,0,0,0.4)',
+      overflow: 'hidden', cursor: this.state.tool === 'split' ? 'crosshair' : 'grab', userSelect: 'none', zIndex: sel ? 4 : 2,
+    };
+  }
+
+  renderVals() {
+    const s = this.state, pps = s.pxPerSec, ACC = this.props.accent || '#3b82f6';
+    const W = s.total * pps;
+    const tlContentStyle = { position: 'relative', width: W + 'px', minWidth: '100%' };
+
+    const step = pps >= 34 ? 1 : pps >= 18 ? 2 : pps >= 12 ? 5 : 10;
+    const ticks = [];
+    for (let t = 0; t <= s.total + 0.001; t += step) {
+      ticks.push({ key: 't' + t, label: this.rl(t), style: {
+        position: 'absolute', left: (t * pps) + 'px', top: 0, height: '30px', display: 'flex',
+        alignItems: 'center', paddingLeft: '5px', fontFamily: 'ui-monospace,monospace', fontSize: '10px',
+        color: '#62626c', borderLeft: '1px solid #1f1f25' } });
+    }
+
+    const H = { video: 60, audio: 48, subtitle: 40 };
+    const chipText = { video: 'V', audio: 'A', subtitle: 'T' };
+    const chipColor = { video: ACC, audio: 'oklch(0.6 0.1 178)', subtitle: 'oklch(0.62 0.13 300)' };
+
+    const vTracks = s.tracks.map(tr => {
+      const h = H[tr.type];
+      return {
+        id: tr.id, name: tr.name, type: tr.type, chip: chipText[tr.type],
+        chipStyle: { fontFamily: 'ui-monospace,monospace', fontSize: '9px', fontWeight: 700, color: '#fff',
+          background: chipColor[tr.type], borderRadius: '4px', padding: '2px 5px', letterSpacing: '0.04em' },
+        headerStyle: { height: h + 'px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 12px', borderTop: '1px solid #1c1c22' },
+        laneStyle: { position: 'relative', height: h + 'px', width: W + 'px', borderTop: '1px solid #1c1c22',
+          background: tr.type === 'video' ? '#101013' : '#0d0d10' },
+        clips: tr.clips.slice().sort((a, b) => a.start - b.start).map(c => {
+          const sel = c.id === s.selectedId;
+          return {
+            id: c.id, label: c.label, isAudio: tr.type === 'audio',
+            style: this.clipStyle(tr.type, c, sel, pps, h, ACC),
+            topbar: { position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
+              background: tr.type === 'video' ? 'oklch(0.74 0.15 ' + c.hue + ')' : tr.type === 'audio' ? 'oklch(0.62 0.1 178)' : 'oklch(0.66 0.14 300)' },
+            wave: { position: 'absolute', left: '8px', right: '8px', top: '52%', height: '54%', transform: 'translateY(-50%)',
+              background: 'repeating-linear-gradient(90deg, oklch(0.72 0.1 178 / 0.5) 0 1.5px, transparent 1.5px 4px)' },
+            labelStyle: { position: 'absolute', left: '9px', bottom: '5px', right: '9px', fontSize: '11px', fontWeight: 600,
+              color: '#f4f4f7', textShadow: '0 1px 2px rgba(0,0,0,0.7)', whiteSpace: 'nowrap', overflow: 'hidden',
+              textOverflow: 'ellipsis', pointerEvents: 'none' },
+            hL: { position: 'absolute', left: 0, top: 0, bottom: 0, width: '8px', cursor: 'col-resize',
+              background: sel ? 'color-mix(in srgb,' + ACC + ' 70%,transparent)' : 'transparent', borderRadius: '6px 0 0 6px' },
+            hR: { position: 'absolute', right: 0, top: 0, bottom: 0, width: '8px', cursor: 'col-resize',
+              background: sel ? 'color-mix(in srgb,' + ACC + ' 70%,transparent)' : 'transparent', borderRadius: '0 6px 6px 0' },
+            onDown: (e) => this.startMove(e, c.id),
+            onClick: (e) => this.onClipClick(e, c.id),
+            onTrimL: (e) => this.startTrim(e, c.id, 'l'),
+            onTrimR: (e) => this.startTrim(e, c.id, 'r'),
+          };
+        }),
+      };
+    });
+
+    const a = this.activeClip();
+    let pvLabel, pvTrack, pvSub, pvFill, pvActive;
+    if (a) {
+      pvActive = true; pvLabel = a.clip.label; pvTrack = a.track.name;
+      pvSub = this.tc(a.clip.start) + ' – ' + this.tc(a.clip.start + a.clip.duration);
+      const hue = a.clip.hue || 250;
+      pvFill = { position: 'absolute', inset: 0, background: 'repeating-linear-gradient(135deg, oklch(0.30 0.05 ' + hue + ') 0 16px, oklch(0.235 0.04 ' + hue + ') 16px 32px)' };
+    } else {
+      pvActive = false; pvLabel = '無訊號'; pvTrack = ''; pvSub = '';
+      pvFill = { position: 'absolute', inset: 0, background: 'repeating-linear-gradient(135deg, #161619 0 16px, #121215 16px 32px)' };
+    }
+
+    const sel = this.findClip(s.selectedId);
+    let selName = '—', selIn = '—', selOut = '—', selDur = '—', selTrack = '—', canMerge = false;
+    if (sel) {
+      selName = sel.clip.label; selIn = this.tc(sel.clip.start);
+      selOut = this.tc(sel.clip.start + sel.clip.duration); selDur = this.tc(sel.clip.duration);
+      selTrack = sel.tr.name;
+      const cs = sel.tr.clips.slice().sort((a, b) => a.start - b.start);
+      const i = cs.findIndex(c => c.id === sel.clip.id);
+      canMerge = i >= 0 && i < cs.length - 1;
+    }
+
+    const tb = (active) => ({ padding: '7px 14px', borderRadius: '7px',
+      border: '1px solid ' + (active ? ACC : '#2c2c33'),
+      background: active ? 'color-mix(in srgb,' + ACC + ' 18%,#131316)' : '#15151a',
+      color: active ? '#fff' : '#c7c7d0', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' });
+    const baseBtn = { padding: '7px 12px', borderRadius: '7px', border: '1px solid #2c2c33', background: '#17171b', color: '#d2d2da', fontSize: '12.5px', fontWeight: 500, cursor: 'pointer' };
+    const fullBtn = { ...baseBtn, width: '100%', textAlign: 'center' };
+
+    return {
+      accent: ACC,
+      vTracks, ticks, tlContentStyle,
+      rulerStyle: { position: 'relative', height: '30px', width: W + 'px', cursor: 'pointer', background: '#0a0a0c', borderBottom: '1px solid #16161b' },
+      playheadStyle: { position: 'absolute', left: (s.playhead * pps) + 'px', top: 0, bottom: 0, width: '2px', background: ACC, pointerEvents: 'none', zIndex: 6, boxShadow: '0 0 8px color-mix(in srgb,' + ACC + ' 60%,transparent)' },
+      playheadKnob: { position: 'absolute', top: '0', left: '-6px', width: '14px', height: '14px', borderRadius: '0 0 7px 7px', background: ACC, cursor: 'ew-resize', pointerEvents: 'auto', boxShadow: '0 2px 6px rgba(0,0,0,0.5)' },
+      currentTC: this.tc(s.playhead), totalTC: this.tc(s.total),
+      isPlaying: s.isPlaying, notPlaying: !s.isPlaying,
+      zoomPct: Math.round(pps / 16 * 100) + '%',
+      pvLabel, pvTrack, pvSub, pvFill, pvActive,
+      selName, selIn, selOut, selDur, selTrack,
+      toolSelStyle: tb(s.tool === 'select'), toolSplitStyle: tb(s.tool === 'split'),
+      actBtn: baseBtn, actBtnFull: fullBtn,
+      mergeStyle: { ...baseBtn, opacity: canMerge ? 1 : 0.4 },
+      mergeStyleFull: { ...fullBtn, opacity: canMerge ? 1 : 0.4 },
+      delStyle: { ...baseBtn, color: '#f0a3a3', borderColor: '#3a2426' },
+      delStyleFull: { ...fullBtn, color: '#f0a3a3', borderColor: '#3a2426' },
+      ghostBtn: { width: '34px', height: '34px', borderRadius: '8px', border: '1px solid #26262c', background: '#15151a', color: '#d2d2da', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
+      ghost2: { padding: '7px 12px', borderRadius: '7px', border: '1px solid #26262c', background: '#15151a', color: '#a8a8b2', fontSize: '12px', cursor: 'pointer' },
+      playBtn: { width: '46px', height: '46px', borderRadius: '50%', border: 'none', background: ACC, color: '#fff', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 16px color-mix(in srgb,' + ACC + ' 45%,transparent)' },
+      playBtnSm: { width: '34px', height: '34px', borderRadius: '50%', border: 'none', background: ACC, color: '#fff', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
+      zoomBtn: { width: '30px', height: '30px', borderRadius: '7px', border: '1px solid #26262c', background: '#15151a', color: '#d2d2da', cursor: 'pointer', fontSize: '16px', lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
+      setSelect: () => this.setTool('select'),
+      setSplit: () => this.setTool('split'),
+      splitPlayhead: () => this.splitPlayhead(),
+      doMerge: () => this.doMerge(),
+      doDup: () => this.doDup(),
+      doDelete: () => this.doDelete(),
+      doReset: () => this.doReset(),
+      zoomIn: () => this.zoom(6),
+      zoomOut: () => this.zoom(-6),
+      togglePlay: () => this.togglePlay(),
+      toStart: () => this.toStart(),
+      toEnd: () => this.toEnd(),
+      seekDrag: (e) => this.seekDrag(e),
+    };
+  }
+}
+</script>
+</body>
+</html>

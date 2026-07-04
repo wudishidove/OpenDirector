@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenDirector 剪輯室</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="title-bar">
+      <div class="brand">
+        <span class="brand-mark"></span>
+        <span class="brand-name">剪輯室</span>
+      </div>
+      <span id="projectMeta" class="project-meta">未命名專案 · 1080p · 30fps</span>
+      <div class="title-spacer"></div>
+      <button id="openProjectBtn" class="top-btn">開啟專案</button>
+      <button id="saveProjectBtn" class="top-btn">儲存專案</button>
+      <button id="importBtn" class="top-btn">匯入媒體</button>
+      <select id="encoderSelect" class="encoder-select" aria-label="encoder"></select>
+      <button id="exportBtn" class="primary-btn">輸出影片</button>
+      <button id="subsToggle" class="subs-btn"><span class="subs-box"></span><span>顯示字幕</span></button>
+      <span id="backendStatus" class="hotkeys">正在檢查 ffmpeg</span>
+    </header>
+
+    <section class="preview-zone">
+      <div class="preview-wrap">
+        <div id="previewCard" class="preview-card">
+          <video id="previewVideo" class="preview-video" playsinline></video>
+          <audio id="previewAudio"></audio>
+          <div id="previewPattern" class="preview-pattern"></div>
+          <div class="preview-vignette"></div>
+          <div class="preview-track">
+            <span id="previewDot" class="preview-dot"></span>
+            <span id="previewTrackName"></span>
+          </div>
+          <div class="preview-time"><span id="currentTC">00:00:00</span> / <span id="totalTC">00:00:00</span></div>
+          <div id="previewCenter" class="preview-center">
+            <div id="previewLabel" class="preview-label">無訊號</div>
+            <div id="previewSub" class="preview-sub"></div>
+          </div>
+          <div id="caption" class="caption"></div>
+        </div>
+
+        <div class="transport">
+          <button id="toStartBtn" class="icon-btn" aria-label="to start">
+            <svg width="15" height="15" viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14l-10-7z" fill="currentColor"/></svg>
+          </button>
+          <button id="playBtn" class="play-btn" aria-label="play"></button>
+          <button id="toEndBtn" class="icon-btn" aria-label="to end">
+            <svg width="15" height="15" viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5l10 7-10 7z" fill="currentColor"/></svg>
+          </button>
+          <div id="transportTC" class="transport-time">00:00:00</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="timeline-panel">
+      <div class="toolbar">
+        <div class="tool-group">
+          <button id="selectToolBtn" class="tool-btn">選取</button>
+          <button id="splitToolBtn" class="tool-btn">切分</button>
+        </div>
+        <div class="divider"></div>
+        <button id="splitPlayheadBtn" class="action-btn">在播放頭切分</button>
+        <button id="mergeBtn" class="action-btn">合併下一段</button>
+        <button id="copyBtn" class="action-btn">複製</button>
+        <button id="pasteBtn" class="action-btn">貼上</button>
+        <button id="deleteBtn" class="action-btn danger">刪除</button>
+        <div class="divider"></div>
+        <span id="selectionInfo" class="selection-info">未選取 · —</span>
+        <span id="clipboardInfo" class="clipboard-info"></span>
+        <div class="toolbar-spacer"></div>
+        <button id="undoBtn" class="ghost-btn">↩ 上一步</button>
+        <button id="resetBtn" class="ghost-btn">重設</button>
+        <div class="zoom-group">
+          <button id="zoomOutBtn" class="zoom-btn">−</button>
+          <div id="zoomPct" class="zoom-pct">100%</div>
+          <button id="zoomInBtn" class="zoom-btn">+</button>
+        </div>
+      </div>
+
+      <div class="timeline-grid">
+        <aside class="track-headers">
+          <div class="ruler-title">時間軸</div>
+          <div id="trackHeaders"></div>
+        </aside>
+        <div id="timelineScroll" class="timeline-scroll">
+          <div id="timelineContent" class="timeline-content"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="contextMenu" class="context-menu hidden"></div>
+
+  <div id="subtitleModal" class="modal-backdrop hidden">
+    <div class="edit-modal">
+      <div class="section-title">編輯字幕文字</div>
+      <input id="subtitleInput" class="edit-input" type="text" placeholder="輸入字幕文字">
+      <div class="modal-actions">
+        <button id="cancelSubtitleBtn" class="ghost-btn">取消</button>
+        <button id="saveSubtitleBtn" class="save-btn">確定</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="exportPanel" class="export-panel hidden">
+    <div class="export-head">
+      <span id="exportTitle">輸出中</span>
+      <button id="cancelExportBtn" class="mini-btn">取消</button>
+    </div>
+    <div class="progress-track"><div id="exportProgress" class="progress-fill"></div></div>
+    <div id="exportMessage" class="export-message"></div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+</body>
+</html>
